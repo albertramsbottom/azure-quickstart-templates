@@ -7,7 +7,6 @@ apt-get -y update
 # set up a silent install of MySQL
 dbpass=$1
 moodleVersion=$2
-installOfficePlugins=$3
 
 export DEBIAN_FRONTEND=noninteractive
 echo mysql-server-5.6 mysql-server/root_password password $dbpass | debconf-set-selections
@@ -32,31 +31,44 @@ $MYSQL -uroot -p$dbpass -e "$SQL"
 apt-get install unzip
 
 # install Moodle
-cd /var/www/html
+cd /var/www
 curl -k --max-redirs 10 https://github.com/moodle/moodle/archive/$moodleVersion.zip -L -o moodle.zip
 unzip moodle.zip
 mv moodle-$moodleVersion moodle
 
-# install Office 365 plugins if asked for
-if [ "$installOfficePlugins" = "True" ]; then
-    curl -k --max-redirs 10 https://github.com/Microsoft/o365-moodle/archive/$moodleVersion.zip -L -o o365.zip
-    unzip o365.zip
-    cp -r o365-moodle-$moodleVersion/* moodle
-    rm -rf o365-moodle-$moodleVersion
-fi
 
-# make the moodle directory writable for owner
+# make the moodle directory writeable for owner
 chown -R www-data moodle
 chmod -R 770 moodle
 
+
+
+#Sort out mounting of additional disk
+
+hdd="/dev/sdc"
+for i in $hdd;do
+echo "n
+p
+1
+w
+"|fdisk $i;mkfs.ext3 $i"1";done
+
+
+#Create Mountpoint
+sudo mkdir /var/www
+#Mount on startup
+echo "Add /dev/sdc1    /var/www   ext4    defaults     0        2" | sudo tee -a /etc/fstab
+#Apply changes
+Sudo mount -a
+
 # create moodledata directory
-mkdir /var/www/moodledata
-chown -R www-data /var/www/moodledata
-chmod -R 770 /var/www/moodledata
+mkdir /var/moodledata
+chown -R www-data /var/moodledata
+chmod -R 770 /var/moodledata
 
 # create cron entry
 # It is scheduled for once per day. It can be changed as needed.
-echo '0 0 * * * php /var/www/html/moodle/admin/cli/cron.php > /dev/null 2>&1' > cronjob
+echo '* * * * * php /var/www/moodle/admin/cli/cron.php > /dev/null 2>&1' > cronjob
 crontab cronjob
 
 # restart MySQL
