@@ -36,15 +36,11 @@ curl -k --max-redirs 10 https://github.com/moodle/moodle/archive/$moodleVersion.
 unzip moodle.zip
 mv moodle-$moodleVersion moodle
 
-
 # make the moodle directory writeable for owner
 chown -R www-data moodle
 chmod -R 770 moodle
 
-
-
 #Sort out mounting of additional disk
-
 hdd="/dev/sdc"
 for i in $hdd;do
 echo "n
@@ -52,7 +48,6 @@ p
 1
 w
 "|fdisk $i;mkfs.ext3 $i"1";done
-
 
 #Create Mountpoint
 sudo mkdir /var/www
